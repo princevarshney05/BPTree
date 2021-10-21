@@ -3,3 +3,4 @@
 .vault-stats
 .vscode
 cmake-build-debug
+build/

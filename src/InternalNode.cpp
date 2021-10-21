@@ -29,10 +29,53 @@ TreePtr InternalNode::single_child_ptr() {
 //TODO: InternalNode::insert_key to be implemented
 TreePtr InternalNode::insert_key(const Key &key, const RecordPtr &record_ptr) {
     TreePtr new_tree_ptr = NULL_PTR;
-    cout << "InternalNode::insert_key not implemented" << endl;
+    // cout << "InternalNode::insert_key not implemented" << endl;
+    TreePtr child_tree_ptr = NULL_PTR;
+    int i;
+    for(i=0;i<this->keys.size();i++){
+        if(key <= this->keys[i]){
+            child_tree_ptr = this->tree_pointers[i];
+            break;
+        }
+    }
+    if(child_tree_ptr == NULL_PTR){
+        child_tree_ptr = this->tree_pointers[this->tree_pointers.size()-1];
+    }
+    auto child_node = TreeNode::tree_node_factory(child_tree_ptr);
+    TreePtr potential_split_node_ptr = child_node->insert_key(key,record_ptr);
+    if(!is_null(potential_split_node_ptr)){
+        auto left_child_node = TreeNode::tree_node_factory(child_tree_ptr);
+        
+        this->keys.insert(this->keys.begin()+i,left_child_node->max());
+        this->tree_pointers.insert(this->tree_pointers.begin()+i+1,potential_split_node_ptr);
+        this->size += 1;
+
+        if(this->overflows()){
+            
+            auto new_node = InternalNode(new_tree_ptr);
+            new_tree_ptr = new_node.tree_ptr;
+            int min_req_child = ceil(FANOUT/2.0);
+            
+            
+            for(int i=min_req_child;i<this->tree_pointers.size();i++){
+                new_node.tree_pointers.push_back(this->tree_pointers[i]);
+                new_node.size += 1;
+            }
+            this->tree_pointers.erase(this->tree_pointers.begin()+min_req_child,this->tree_pointers.end());
+            this->size -= new_node.size;
+            for(int i=min_req_child;i<this->keys.size();i++){
+                new_node.keys.push_back(this->keys[i]);
+            }
+            this->keys.erase(this->keys.begin()+min_req_child-1,this->keys.end());
+            new_node.dump();
+        }
+    }
     this->dump();
+    
     return new_tree_ptr;
 }
+
+
 
 //deletes key from subtree rooted at this if exists
 //TODO: InternalNode::delete_key to be implemented

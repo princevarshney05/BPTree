@@ -19,7 +19,39 @@ Key LeafNode::max() {
 //TODO: LeafNode::insert_key to be implemented
 TreePtr LeafNode::insert_key(const Key &key, const RecordPtr &record_ptr) {
     TreePtr new_leaf = NULL_PTR; //if leaf is split, new_leaf = ptr to new split node ptr
-    cout << "LeafNode::insert_key not implemented" << endl;
+    // cout << "LeafNode::insert_key not implemented" << endl;
+    auto dp = this->data_pointers;
+    dp.insert({key,record_ptr});
+    if(dp.size() <= FANOUT){
+        
+        this->size += 1;
+    }
+    else{
+        map<Key,RecordPtr> split_node;
+        int min_req = ceil(FANOUT/2.0);
+        
+        int taken = 0;
+        for(auto it=dp.begin();it != dp.end();){
+            
+            if(taken >= min_req){
+                split_node.insert(*it);
+                dp.erase(it++);
+            }
+            else{
+                it++;
+                taken++;
+            }
+
+        }
+        this->size = min_req;
+        LeafNode new_node = LeafNode(new_leaf);
+        new_node.data_pointers = split_node;
+        new_node.size = split_node.size();
+        new_node.dump();
+        new_leaf = new_node.tree_ptr;
+    }
+    this->data_pointers = dp;
+    
     this->dump();
     return new_leaf;
 }
