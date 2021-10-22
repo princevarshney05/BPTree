@@ -20,6 +20,8 @@ public:
 
     //helper functions
     Key max() override;
+    map<Key, RecordPtr> remove_right(int req);
+    map<Key, RecordPtr> remove_left(int req);
 
     //key functions
     TreePtr insert_key(const Key &key, const RecordPtr &record_ptr) override;// TO BE IMPLEMENTED

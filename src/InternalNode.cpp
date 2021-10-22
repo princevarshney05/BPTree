@@ -1,4 +1,6 @@
 #include "InternalNode.hpp"
+#include "LeafNode.hpp"
+#include "RecordPtr.hpp"
 
 //creates internal node pointed to by tree_ptr or creates a new one
 InternalNode::InternalNode(const TreePtr &tree_ptr) : TreeNode(INTERNAL, tree_ptr) {
@@ -81,7 +83,86 @@ TreePtr InternalNode::insert_key(const Key &key, const RecordPtr &record_ptr) {
 //TODO: InternalNode::delete_key to be implemented
 void InternalNode::delete_key(const Key &key) {
     TreePtr new_tree_ptr = NULL_PTR;
-    cout << "InternalNode::delete_key not implemented" << endl;
+    // cout << "InternalNode::delete_key not implemented" << endl;
+    TreePtr child_tree_ptr = NULL_PTR;
+    int i;
+    for(i=0;i<this->keys.size();i++){
+        if(key <= this->keys[i]){
+            child_tree_ptr = this->tree_pointers[i];
+            break;
+        }
+    }
+    if(child_tree_ptr == NULL_PTR){
+        child_tree_ptr = this->tree_pointers[this->tree_pointers.size()-1];
+    }
+    auto child_node = TreeNode::tree_node_factory(child_tree_ptr);
+    child_node->delete_key(key);
+    if(child_node->underflows()){
+        
+        
+        if(i-1>=0) // left sibling exits
+        {
+            
+            auto left_sibling_ptr = this->tree_pointers[i-1];
+            auto left_sibling_node = LeafNode(left_sibling_ptr);
+            auto cur_child_node = LeafNode(child_tree_ptr);
+            if(cur_child_node.size+left_sibling_node.size >= 2*MIN_OCCUPANCY) // redistribution possible 
+            {
+               
+                int min_req = MIN_OCCUPANCY - cur_child_node.size;
+                
+                map<Key,RecordPtr> extras = left_sibling_node.remove_right(min_req);
+
+                
+                cur_child_node.data_pointers.insert(extras.begin(),extras.end());
+                cur_child_node.size += min_req;
+                this->keys[i-1] = left_sibling_node.max();
+                cur_child_node.dump();
+            }
+            else{
+                
+                left_sibling_node.data_pointers.insert(cur_child_node.data_pointers.begin(),cur_child_node.data_pointers.end());
+                left_sibling_node.size += cur_child_node.data_pointers.size();
+                this->keys.erase(this->keys.begin()+i-1);
+                this->tree_pointers.erase(this->tree_pointers.begin()+i);
+                this->size -= 1;
+                left_sibling_node.dump();
+                cur_child_node.data_pointers.clear();
+                cur_child_node.dump();
+            }
+        }
+        else // right-sibling exits
+        {
+            auto right_sibling_ptr = this->tree_pointers[i+1];
+            auto right_sibling_node = LeafNode(right_sibling_ptr);
+            auto cur_child_node = LeafNode(child_tree_ptr);
+            if(cur_child_node.size+right_sibling_node.size >= 2*MIN_OCCUPANCY) // redistribution possible 
+            {
+               
+                int min_req = MIN_OCCUPANCY - cur_child_node.size;
+                
+                map<Key,RecordPtr> extras = right_sibling_node.remove_left(min_req);
+
+                
+                cur_child_node.data_pointers.insert(extras.begin(),extras.end());
+                cur_child_node.size += min_req;
+                this->keys[i] = cur_child_node.max();
+                cur_child_node.dump();
+            }
+            else{
+                
+                right_sibling_node.data_pointers.insert(cur_child_node.data_pointers.begin(),cur_child_node.data_pointers.end());
+                right_sibling_node.size += cur_child_node.data_pointers.size();
+                this->keys.erase(this->keys.begin()+i);
+                this->tree_pointers.erase(this->tree_pointers.begin()+i);
+                this->size -= 1;
+                right_sibling_node.dump();
+                cur_child_node.data_pointers.clear();
+                cur_child_node.dump();
+            }
+        }
+    }
+
     this->dump();
 }
 

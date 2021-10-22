@@ -151,3 +151,27 @@ istream& LeafNode::read(istream& is){
     is >> this->next_leaf_ptr;
     return is;
 }
+
+map<Key, RecordPtr> LeafNode::remove_right(int req){
+    auto it = this->data_pointers.end();
+    for(int i = 0;i<req;i++){
+        it--;
+    }
+    map<Key, RecordPtr> removed(it ,this->data_pointers.end());
+    this->data_pointers.erase(it,this->data_pointers.end());
+    this->size -= req;
+    this->dump();
+    return removed;
+}
+
+map<Key, RecordPtr> LeafNode::remove_left(int req){
+    auto it = this->data_pointers.begin();
+    for(int i = 0;i<req;i++){
+        it++;
+    }
+    map<Key, RecordPtr> removed(this->data_pointers.begin() ,it);
+    this->data_pointers.erase(this->data_pointers.begin() ,it);
+    this->size -= req;
+    this->dump();
+    return removed;
+}
