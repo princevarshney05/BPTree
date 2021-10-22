@@ -165,6 +165,7 @@ void InternalNode::delete_key(const Key &key) {
             }
         }
         else{
+            
             if(i-1>=0) // left sibling exits
             {
                 
@@ -173,16 +174,29 @@ void InternalNode::delete_key(const Key &key) {
                 auto cur_child_node = InternalNode(child_tree_ptr);
                 if(cur_child_node.size+left_sibling_node.size >= 2*MIN_OCCUPANCY) // redistribution possible 
                 {
-                
-                    // int min_req = MIN_OCCUPANCY - cur_child_node.size;
                     
-                    // map<Key,RecordPtr> extras = left_sibling_node.remove_right(min_req);
+                    int min_req = MIN_OCCUPANCY - cur_child_node.size;
+
+                    vector<int> extra_keys(left_sibling_node.keys.end()-min_req,left_sibling_node.keys.end());
+                    left_sibling_node.keys.erase(left_sibling_node.keys.end()-min_req,left_sibling_node.keys.end());
+
+                    vector<TreePtr> extra_pointers(left_sibling_node.tree_pointers.end()-min_req,left_sibling_node.tree_pointers.end());
+                    left_sibling_node.tree_pointers.erase(left_sibling_node.tree_pointers.end()-min_req,left_sibling_node.tree_pointers.end());
+
+                    left_sibling_node.size -= min_req;
 
                     
-                    // cur_child_node.data_pointers.insert(extras.begin(),extras.end());
-                    // cur_child_node.size += min_req;
-                    // this->keys[i-1] = left_sibling_node.max();
-                    // cur_child_node.dump();
+                    extra_keys.push_back(this->keys[i-1]);
+                    this->keys[i-1] = extra_keys[0];
+                    extra_keys.erase(extra_keys.begin());
+
+                    cur_child_node.keys.insert(cur_child_node.keys.begin(),extra_keys.begin(),extra_keys.end());
+                    cur_child_node.tree_pointers.insert(cur_child_node.tree_pointers.begin(),extra_pointers.begin(),extra_pointers.end());
+
+                    cur_child_node.size += min_req;
+
+                    cur_child_node.dump();
+                    left_sibling_node.dump();
                 }
                 else{ // merging
                     
@@ -207,15 +221,28 @@ void InternalNode::delete_key(const Key &key) {
                 if(cur_child_node.size+right_sibling_node.size >= 2*MIN_OCCUPANCY) // redistribution possible 
                 {
                 
-                    // int min_req = MIN_OCCUPANCY - cur_child_node.size;
                     
-                    // map<Key,RecordPtr> extras = right_sibling_node.remove_left(min_req);
+                    int min_req = MIN_OCCUPANCY - cur_child_node.size;
 
-                    
-                    // cur_child_node.data_pointers.insert(extras.begin(),extras.end());
-                    // cur_child_node.size += min_req;
-                    // this->keys[i] = cur_child_node.max();
-                    // cur_child_node.dump();
+                    vector<int> extra_keys(right_sibling_node.keys.begin(),right_sibling_node.keys.begin()+min_req);
+                    right_sibling_node.keys.erase(right_sibling_node.keys.begin(),right_sibling_node.keys.begin()+min_req);
+
+                    vector<TreePtr> extra_pointers(right_sibling_node.tree_pointers.begin(),right_sibling_node.tree_pointers.begin()+min_req);
+                    right_sibling_node.tree_pointers.erase(right_sibling_node.tree_pointers.begin(),right_sibling_node.tree_pointers.begin()+min_req);
+
+                    right_sibling_node.size -= min_req;
+
+                    cur_child_node.keys.push_back(this->keys[i]);
+                    this->keys[i] = extra_keys[extra_keys.size()-1];
+                    extra_keys.pop_back();
+
+                    cur_child_node.keys.insert(cur_child_node.keys.end(),extra_keys.begin(),extra_keys.end());
+                    cur_child_node.tree_pointers.insert(cur_child_node.tree_pointers.end(),extra_pointers.begin(),extra_pointers.end());
+
+                    cur_child_node.size += min_req;
+
+                    cur_child_node.dump();
+                    right_sibling_node.dump();
                 }
                 else{
                     
