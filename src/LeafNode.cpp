@@ -47,8 +47,11 @@ TreePtr LeafNode::insert_key(const Key &key, const RecordPtr &record_ptr) {
         LeafNode new_node = LeafNode(new_leaf);
         new_node.data_pointers = split_node;
         new_node.size = split_node.size();
-        new_node.dump();
         new_leaf = new_node.tree_ptr;
+        TreePtr temp = this->next_leaf_ptr;
+        this->next_leaf_ptr = new_leaf;
+        new_node.next_leaf_ptr = temp;
+        new_node.dump();
     }
     this->data_pointers = dp;
     
