@@ -98,69 +98,142 @@ void InternalNode::delete_key(const Key &key) {
     auto child_node = TreeNode::tree_node_factory(child_tree_ptr);
     child_node->delete_key(key);
     if(child_node->underflows()){
-        
-        
-        if(i-1>=0) // left sibling exits
-        {
-            
-            auto left_sibling_ptr = this->tree_pointers[i-1];
-            auto left_sibling_node = LeafNode(left_sibling_ptr);
-            auto cur_child_node = LeafNode(child_tree_ptr);
-            if(cur_child_node.size+left_sibling_node.size >= 2*MIN_OCCUPANCY) // redistribution possible 
-            {
-               
-                int min_req = MIN_OCCUPANCY - cur_child_node.size;
-                
-                map<Key,RecordPtr> extras = left_sibling_node.remove_right(min_req);
 
+        if(child_node->node_type == LEAF){
+
+        
+            if(i-1>=0) // left sibling exits
+            {
                 
-                cur_child_node.data_pointers.insert(extras.begin(),extras.end());
-                cur_child_node.size += min_req;
-                this->keys[i-1] = left_sibling_node.max();
-                cur_child_node.dump();
+                auto left_sibling_ptr = this->tree_pointers[i-1];
+                auto left_sibling_node = LeafNode(left_sibling_ptr);
+                auto cur_child_node = LeafNode(child_tree_ptr);
+                if(cur_child_node.size+left_sibling_node.size >= 2*MIN_OCCUPANCY) // redistribution possible 
+                {
+                
+                    int min_req = MIN_OCCUPANCY - cur_child_node.size;
+                    
+                    map<Key,RecordPtr> extras = left_sibling_node.remove_right(min_req);
+
+                    
+                    cur_child_node.data_pointers.insert(extras.begin(),extras.end());
+                    cur_child_node.size += min_req;
+                    this->keys[i-1] = left_sibling_node.max();
+                    cur_child_node.dump();
+                }
+                else{
+                    
+                    left_sibling_node.data_pointers.insert(cur_child_node.data_pointers.begin(),cur_child_node.data_pointers.end());
+                    left_sibling_node.size += cur_child_node.data_pointers.size();
+                    this->keys.erase(this->keys.begin()+i-1);
+                    this->tree_pointers.erase(this->tree_pointers.begin()+i);
+                    this->size -= 1;
+                    left_sibling_node.dump();
+                    cur_child_node.data_pointers.clear();
+                    cur_child_node.dump();
+                }
             }
-            else{
+            else // right-sibling exits
+            {
+                auto right_sibling_ptr = this->tree_pointers[i+1];
+                auto right_sibling_node = LeafNode(right_sibling_ptr);
+                auto cur_child_node = LeafNode(child_tree_ptr);
+                if(cur_child_node.size+right_sibling_node.size >= 2*MIN_OCCUPANCY) // redistribution possible 
+                {
                 
-                left_sibling_node.data_pointers.insert(cur_child_node.data_pointers.begin(),cur_child_node.data_pointers.end());
-                left_sibling_node.size += cur_child_node.data_pointers.size();
-                this->keys.erase(this->keys.begin()+i-1);
-                this->tree_pointers.erase(this->tree_pointers.begin()+i);
-                this->size -= 1;
-                left_sibling_node.dump();
-                cur_child_node.data_pointers.clear();
-                cur_child_node.dump();
+                    int min_req = MIN_OCCUPANCY - cur_child_node.size;
+                    
+                    map<Key,RecordPtr> extras = right_sibling_node.remove_left(min_req);
+
+                    
+                    cur_child_node.data_pointers.insert(extras.begin(),extras.end());
+                    cur_child_node.size += min_req;
+                    this->keys[i] = cur_child_node.max();
+                    cur_child_node.dump();
+                }
+                else{
+                    
+                    right_sibling_node.data_pointers.insert(cur_child_node.data_pointers.begin(),cur_child_node.data_pointers.end());
+                    right_sibling_node.size += cur_child_node.data_pointers.size();
+                    this->keys.erase(this->keys.begin()+i);
+                    this->tree_pointers.erase(this->tree_pointers.begin()+i);
+                    this->size -= 1;
+                    right_sibling_node.dump();
+                    cur_child_node.data_pointers.clear();
+                    cur_child_node.dump();
+                }
             }
         }
-        else // right-sibling exits
-        {
-            auto right_sibling_ptr = this->tree_pointers[i+1];
-            auto right_sibling_node = LeafNode(right_sibling_ptr);
-            auto cur_child_node = LeafNode(child_tree_ptr);
-            if(cur_child_node.size+right_sibling_node.size >= 2*MIN_OCCUPANCY) // redistribution possible 
+        else{
+            if(i-1>=0) // left sibling exits
             {
-               
-                int min_req = MIN_OCCUPANCY - cur_child_node.size;
                 
-                map<Key,RecordPtr> extras = right_sibling_node.remove_left(min_req);
+                auto left_sibling_ptr = this->tree_pointers[i-1];
+                auto left_sibling_node = InternalNode(left_sibling_ptr);
+                auto cur_child_node = InternalNode(child_tree_ptr);
+                if(cur_child_node.size+left_sibling_node.size >= 2*MIN_OCCUPANCY) // redistribution possible 
+                {
+                
+                    // int min_req = MIN_OCCUPANCY - cur_child_node.size;
+                    
+                    // map<Key,RecordPtr> extras = left_sibling_node.remove_right(min_req);
 
-                
-                cur_child_node.data_pointers.insert(extras.begin(),extras.end());
-                cur_child_node.size += min_req;
-                this->keys[i] = cur_child_node.max();
-                cur_child_node.dump();
+                    
+                    // cur_child_node.data_pointers.insert(extras.begin(),extras.end());
+                    // cur_child_node.size += min_req;
+                    // this->keys[i-1] = left_sibling_node.max();
+                    // cur_child_node.dump();
+                }
+                else{ // merging
+                    
+                    left_sibling_node.keys.push_back(this->keys[i-1]);
+                    left_sibling_node.keys.insert(left_sibling_node.keys.end(),cur_child_node.keys.begin(),cur_child_node.keys.end());
+                    left_sibling_node.tree_pointers.insert(left_sibling_node.tree_pointers.end(),cur_child_node.tree_pointers.begin(),cur_child_node.tree_pointers.end());
+                    left_sibling_node.size += cur_child_node.size;
+                    this->keys.erase(this->keys.begin()+i-1);
+                    this->tree_pointers.erase(this->tree_pointers.begin()+i);
+                    this->size -= 1;
+                    left_sibling_node.dump();
+                    cur_child_node.keys.clear();
+                    cur_child_node.tree_pointers.clear();
+                    cur_child_node.dump();
+                }
             }
-            else{
+            else // right-sibling exits
+            {
+                auto right_sibling_ptr = this->tree_pointers[i+1];
+                auto right_sibling_node = InternalNode(right_sibling_ptr);
+                auto cur_child_node = InternalNode(child_tree_ptr);
+                if(cur_child_node.size+right_sibling_node.size >= 2*MIN_OCCUPANCY) // redistribution possible 
+                {
                 
-                right_sibling_node.data_pointers.insert(cur_child_node.data_pointers.begin(),cur_child_node.data_pointers.end());
-                right_sibling_node.size += cur_child_node.data_pointers.size();
-                this->keys.erase(this->keys.begin()+i);
-                this->tree_pointers.erase(this->tree_pointers.begin()+i);
-                this->size -= 1;
-                right_sibling_node.dump();
-                cur_child_node.data_pointers.clear();
-                cur_child_node.dump();
+                    // int min_req = MIN_OCCUPANCY - cur_child_node.size;
+                    
+                    // map<Key,RecordPtr> extras = right_sibling_node.remove_left(min_req);
+
+                    
+                    // cur_child_node.data_pointers.insert(extras.begin(),extras.end());
+                    // cur_child_node.size += min_req;
+                    // this->keys[i] = cur_child_node.max();
+                    // cur_child_node.dump();
+                }
+                else{
+                    
+                    right_sibling_node.keys.insert(right_sibling_node.keys.begin(),this->keys[i]);
+                    right_sibling_node.keys.insert(right_sibling_node.keys.begin(),cur_child_node.keys.begin(),cur_child_node.keys.end());
+                    right_sibling_node.tree_pointers.insert(right_sibling_node.tree_pointers.begin(),cur_child_node.tree_pointers.begin(),cur_child_node.tree_pointers.end());
+                    right_sibling_node.size += cur_child_node.size;
+                    this->keys.erase(this->keys.begin()+i);
+                    this->tree_pointers.erase(this->tree_pointers.begin()+i);
+                    this->size -= 1;
+                    right_sibling_node.dump();
+                    cur_child_node.keys.clear();
+                    cur_child_node.tree_pointers.clear();
+                    cur_child_node.dump();
+                }
             }
         }
+
     }
 
     this->dump();
